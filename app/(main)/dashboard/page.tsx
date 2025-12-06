@@ -1,8 +1,8 @@
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
-import { TrendingUp, Users, Target, CheckCircle2 } from "lucide-react"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts"
+import { TrendingUp, Users, Target, CheckCircle2, ArrowUpRight, DollarSign, Activity } from "lucide-react"
 
 // Mock Data
 const mockLeads = [
@@ -49,141 +49,227 @@ export default function DashboardPage() {
     { name: "Closing", value: dealStats.filter((d) => d.stage === "closing").length },
   ]
 
+  // Enhanced chart data with gradients
+  const chartData = stageDistribution.map(item => ({
+    ...item,
+    fill: "url(#colorGradient)"
+  }))
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome back! Here's your sales overview.</p>
+    <div className="space-y-8 p-1">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 bg-clip-text text-transparent">
+          Dashboard
+        </h1>
+        <p className="text-lg text-muted-foreground">
+          Welcome back! Here's your executive overview.
+        </p>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pipeline Value</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+      {/* Premium KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="relative overflow-hidden border-none shadow-lg bg-gradient-to-br from-indigo-500 to-purple-600 text-white hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-white/80">Pipeline Value</CardTitle>
+            <DollarSign className="h-4 w-4 text-white/70" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${(pipelineValue / 1000).toFixed(0)}K</div>
-            <p className="text-xs text-muted-foreground">{dealStats.length} open deals</p>
+            <div className="text-3xl font-bold">${(pipelineValue / 1000).toFixed(0)}K</div>
+            <p className="text-xs text-indigo-100 flex items-center mt-1">
+              <ArrowUpRight className="h-3 w-3 mr-1" />
+              +12% from last month
+            </p>
           </CardContent>
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white/10 rounded-full blur-2xl" />
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Leads</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+        <Card className="border shadow-md hover:shadow-lg transition-all duration-300 group">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">Total Leads</CardTitle>
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+              <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{leadStats.length}</div>
-            <p className="text-xs text-muted-foreground">
-              {leadStats.filter((l) => l.status === "qualified").length} qualified
+            <div className="text-3xl font-bold">{leadStats.length}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              <span className="text-green-600 font-medium">{leadStats.filter((l) => l.status === "qualified").length} qualified</span> leads
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Deal Size</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
+        <Card className="border shadow-md hover:shadow-lg transition-all duration-300 group">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">Avg Deal Size</CardTitle>
+            <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-full">
+              <Target className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${avgDealSize.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">{dealsWon} won this period</p>
+            <div className="text-3xl font-bold">${avgDealSize.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {dealsWon} deals won this period
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Open Tasks</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+        <Card className="border shadow-md hover:shadow-lg transition-all duration-300 group">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">Open Tasks</CardTitle>
+            <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-full">
+              <CheckCircle2 className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{openTasks}</div>
-            <p className="text-xs text-muted-foreground">Due this week</p>
+            <div className="text-3xl font-bold">{openTasks}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Action items due this week
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Deal Pipeline by Stage</CardTitle>
-            <CardDescription>Number of deals at each stage</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={stageDistribution}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="value" fill="hsl(var(--primary))" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Charts Column */}
+        <div className="lg:col-span-2 space-y-8">
+          <Card className="shadow-md border-none ring-1 ring-slate-200 dark:ring-slate-800">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="w-5 h-5 text-indigo-500" />
+                Deal Pipeline
+              </CardTitle>
+              <CardDescription>Visual breakdown of deal stages</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[350px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.8} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                    <XAxis
+                      dataKey="name"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#6b7280', fontSize: 12 }}
+                      dy={10}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#6b7280', fontSize: 12 }}
+                    />
+                    <Tooltip
+                      cursor={{ fill: 'transparent' }}
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    />
+                    <Bar
+                      dataKey="value"
+                      fill="url(#colorGradient)"
+                      radius={[6, 6, 0, 0]}
+                      barSize={50}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Lead Status Distribution</CardTitle>
-            <CardDescription>Leads by status</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {["new", "contacted", "qualified", "converted", "lost"].map((status) => {
-                const count = leadStats.filter((l) => l.status === status).length
-                const percentage = leadStats.length > 0 ? (count / leadStats.length) * 100 : 0
-                return (
-                  <div key={status}>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="capitalize">{status}</span>
-                      <span className="font-medium">{count}</span>
+          <Card className="shadow-md border-none ring-1 ring-slate-200 dark:ring-slate-800">
+            <CardHeader>
+              <CardTitle>Lead Sources</CardTitle>
+              <CardDescription>Where your healthy leads are coming from</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {/* Custom Progress Bar for Lead Status */}
+                {["New", "Contacted", "Qualified", "Converted"].map((status, i) => {
+                  const count = leadStats.filter((l) => l.status.toLowerCase() === status.toLowerCase()).length;
+                  const total = leadStats.length;
+                  const percentage = total > 0 ? (count / total) * 100 : 0;
+                  const colors = ["bg-blue-500", "bg-purple-500", "bg-emerald-500", "bg-indigo-500"];
+
+                  return (
+                    <div key={status} className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="font-medium text-gray-700 dark:text-gray-300">{status}</span>
+                        <span className="text-gray-500">{percentage.toFixed(0)}% ({count})</span>
+                      </div>
+                      <div className="h-3 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${colors[i]}`}
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="w-full bg-muted rounded-full h-2">
-                      <div className="bg-primary h-2 rounded-full" style={{ width: `${percentage}%` }} />
-                    </div>
+                  )
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Activity Column */}
+        <div className="lg:col-span-1">
+          <Card className="h-full shadow-md border-none ring-1 ring-slate-200 dark:ring-slate-800">
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+              <CardDescription>Latest updates from your team</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="relative space-y-0 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
+
+                {/* Timeline Item 1 */}
+                <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active pb-8 last:pb-0">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-100 group-[.is-active]:bg-indigo-600 text-slate-500 group-[.is-active]:text-emerald-50 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                    <TrendingUp className="w-5 h-5" />
                   </div>
-                )
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                  <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm ml-4 md:ml-0 md:mr-0 z-0">
+                    <div className="flex items-center justify-between space-x-2 mb-1">
+                      <div className="font-bold text-slate-900 dark:text-slate-100">New deal created</div>
+                      <time className="font-caveat font-medium text-xs text-indigo-500">Just now</time>
+                    </div>
+                    <div className="text-slate-500 text-sm">Enterprise Package for $100k</div>
+                  </div>
+                </div>
 
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>Latest actions and updates</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="w-2 h-2 rounded-full bg-primary mt-2" />
-              <div>
-                <p className="text-sm font-medium">New deal created</p>
-                <p className="text-xs text-muted-foreground">Enterprise Package - Corp for $100,000</p>
+                {/* Timeline Item 2 */}
+                <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group pb-8 last:pb-0">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-sky-100 text-sky-600 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                    <Target className="w-5 h-5" />
+                  </div>
+                  <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm ml-4 md:ml-0 md:mr-0 z-0">
+                    <div className="flex items-center justify-between space-x-2 mb-1">
+                      <div className="font-bold text-slate-900 dark:text-slate-100">Lead Qualified</div>
+                      <time className="font-caveat font-medium text-xs text-slate-500">2h ago</time>
+                    </div>
+                    <div className="text-slate-500 text-sm">Alice Johnson moved to Qualified</div>
+                  </div>
+                </div>
+
+                {/* Timeline Item 3 */}
+                <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group pb-8 last:pb-0">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-amber-100 text-amber-600 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                    <CheckCircle2 className="w-5 h-5" />
+                  </div>
+                  <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm ml-4 md:ml-0 md:mr-0 z-0">
+                    <div className="flex items-center justify-between space-x-2 mb-1">
+                      <div className="font-bold text-slate-900 dark:text-slate-100">Task Completed</div>
+                      <time className="font-caveat font-medium text-xs text-slate-500">5h ago</time>
+                    </div>
+                    <div className="text-slate-500 text-sm">Follow-up with John Doe</div>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-2 h-2 rounded-full bg-accent mt-2" />
-              <div>
-                <p className="text-sm font-medium">Lead qualified</p>
-                <p className="text-xs text-muted-foreground">Alice Johnson from Tech Startup Inc</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-2 h-2 rounded-full bg-chart-2 mt-2" />
-              <div>
-                <p className="text-sm font-medium">Task completed</p>
-                <p className="text-xs text-muted-foreground">Follow-up call with John Doe</p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   )
 }
