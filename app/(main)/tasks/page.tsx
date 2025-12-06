@@ -3,7 +3,6 @@
 import type React from "react"
 
 import { useState } from "react"
-import { useFetch } from "@/lib/hooks"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,12 +10,27 @@ import { Badge } from "@/components/ui/badge"
 import { Plus, Search, Filter, Clock, AlertCircle, CheckCircle2 } from "lucide-react"
 import { TaskForm } from "@/components/task-form"
 
+// Mock Tasks Data
+const mockTasks = [
+  { _id: "1", title: "Follow up with Alice", status: "open", priority: "high", category: "call", due_date: "2024-03-20", description: "Discuss contract details", related_to_type: "lead" },
+  { _id: "2", title: "Prepare proposal for Global Corp", status: "completed", priority: "medium", category: "email", due_date: "2024-03-18", description: "Send initial draft", related_to_type: "customer" },
+  { _id: "3", title: "Schedule demo", status: "open", priority: "medium", category: "meeting", due_date: "2024-03-21", description: "Product demonstration", related_to_type: "lead" },
+  { _id: "4", title: "Email marketing campaign", status: "open", priority: "low", category: "email", due_date: "2024-03-22", description: "Q2 Newsletter", related_to_type: "general" },
+  { _id: "5", title: "Review quarterly report", status: "cancelled", priority: "high", category: "other", due_date: "2024-03-15", description: "Internal review", related_to_type: "internal" },
+  { _id: "6", title: "Client lunch", status: "open", priority: "medium", category: "meeting", due_date: "2024-03-25", description: "Discuss expansion", related_to_type: "customer" }
+]
+
 export default function TasksPage() {
   const [statusFilter, setStatusFilter] = useState("open")
   const [formOpen, setFormOpen] = useState(false)
-  const { data: tasksData } = useFetch(`/api/tasks?status=${statusFilter}&limit=50`)
 
-  const tasks = tasksData?.data || []
+  // Filter mock tasks
+  const tasks = mockTasks.filter(task => {
+    if (statusFilter === "open") return task.status === "open"
+    if (statusFilter === "completed") return task.status === "completed"
+    if (statusFilter === "cancelled") return task.status === "cancelled"
+    return true
+  })
 
   const getPriorityColor = (priority: string) => {
     const colors: Record<string, string> = {
@@ -78,9 +92,8 @@ export default function TasksPage() {
           <button
             key={status}
             onClick={() => setStatusFilter(status)}
-            className={`px-3 py-1 rounded-full text-sm transition-colors ${
-              statusFilter === status ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/80"
-            }`}
+            className={`px-3 py-1 rounded-full text-sm transition-colors ${statusFilter === status ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/80"
+              }`}
           >
             {status.charAt(0).toUpperCase() + status.slice(1)}
           </button>
@@ -97,9 +110,8 @@ export default function TasksPage() {
           return (
             <Card
               key={task._id}
-              className={`hover:shadow-md transition-shadow ${
-                overdue ? "border-destructive/50" : dueToday ? "border-yellow-500/50" : ""
-              }`}
+              className={`hover:shadow-md transition-shadow ${overdue ? "border-destructive/50" : dueToday ? "border-yellow-500/50" : ""
+                }`}
             >
               <CardContent className="p-4">
                 <div className="flex items-start gap-4">

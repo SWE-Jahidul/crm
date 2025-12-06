@@ -1,31 +1,52 @@
 "use client"
 
-import { useFetch } from "@/lib/hooks"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { TrendingUp, Users, Target, CheckCircle2 } from "lucide-react"
 
+// Mock Data
+const mockLeads = [
+  { id: 1, name: "Alice Johnson", status: "qualified", company: "Tech Startup Inc" },
+  { id: 2, name: "Bob Smith", status: "new", company: "Global Corp" },
+  { id: 3, name: "Carol White", status: "contacted", company: "Design Studio" },
+  { id: 4, name: "David Brown", status: "converted", company: "Law Firm" },
+  { id: 5, name: "Eva Green", status: "lost", company: "Consulting Group" },
+  { id: 6, name: "Frank Miller", status: "qualified", company: "Retail Chain" },
+  { id: 7, name: "Grace Lee", status: "new", company: "Software House" },
+]
+
+const mockDeals = [
+  { id: 1, title: "Enterprise License", value: 50000, stage: "negotiation" },
+  { id: 2, title: "Startup Package", value: 5000, stage: "won" },
+  { id: 3, title: "Consulting Project", value: 15000, stage: "qualified" },
+  { id: 4, title: "Maintenance Contract", value: 8000, stage: "closing" },
+  { id: 5, title: "Training Session", value: 2000, stage: "new" },
+  { id: 6, title: "Custom Development", value: 25000, stage: "contacted" },
+]
+
+const mockTasks = [
+  { id: 1, title: "Follow up with Alice", status: "open", dueDate: "2024-03-20" },
+  { id: 2, title: "Prepare proposal for Global Corp", status: "completed", dueDate: "2024-03-18" },
+  { id: 3, title: "Schedule demo", status: "open", dueDate: "2024-03-21" },
+  { id: 4, title: "Email marketing campaign", status: "open", dueDate: "2024-03-22" },
+]
+
 export default function DashboardPage() {
-  const { data: leads } = useFetch("/api/leads?limit=100")
-  const { data: customers } = useFetch("/api/customers?limit=100")
-  const { data: deals } = useFetch("/api/deals?limit=100")
-  const { data: tasks } = useFetch("/api/tasks?limit=100")
+  const leadStats = mockLeads
+  const dealStats = mockDeals
+  const taskStats = mockTasks
 
-  const leadStats = leads?.data || []
-  const dealStats = deals?.data || []
-  const taskStats = tasks?.data || []
-
-  const pipelineValue = dealStats.reduce((sum: number, deal: any) => sum + deal.value, 0)
-  const dealsWon = dealStats.filter((d: any) => d.stage === "won").length
+  const pipelineValue = dealStats.reduce((sum, deal) => sum + deal.value, 0)
+  const dealsWon = dealStats.filter((d) => d.stage === "won").length
   const avgDealSize = dealStats.length > 0 ? Math.round(pipelineValue / dealStats.length) : 0
-  const openTasks = taskStats.filter((t: any) => t.status === "open").length
+  const openTasks = taskStats.filter((t) => t.status === "open").length
 
   const stageDistribution = [
-    { name: "New", value: dealStats.filter((d: any) => d.stage === "new").length },
-    { name: "Contacted", value: dealStats.filter((d: any) => d.stage === "contacted").length },
-    { name: "Qualified", value: dealStats.filter((d: any) => d.stage === "qualified").length },
-    { name: "Negotiation", value: dealStats.filter((d: any) => d.stage === "negotiation").length },
-    { name: "Closing", value: dealStats.filter((d: any) => d.stage === "closing").length },
+    { name: "New", value: dealStats.filter((d) => d.stage === "new").length },
+    { name: "Contacted", value: dealStats.filter((d) => d.stage === "contacted").length },
+    { name: "Qualified", value: dealStats.filter((d) => d.stage === "qualified").length },
+    { name: "Negotiation", value: dealStats.filter((d) => d.stage === "negotiation").length },
+    { name: "Closing", value: dealStats.filter((d) => d.stage === "closing").length },
   ]
 
   return (
@@ -56,7 +77,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">{leadStats.length}</div>
             <p className="text-xs text-muted-foreground">
-              {leadStats.filter((l: any) => l.status === "qualified").length} qualified
+              {leadStats.filter((l) => l.status === "qualified").length} qualified
             </p>
           </CardContent>
         </Card>
@@ -112,7 +133,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="space-y-4">
               {["new", "contacted", "qualified", "converted", "lost"].map((status) => {
-                const count = leadStats.filter((l: any) => l.status === status).length
+                const count = leadStats.filter((l) => l.status === status).length
                 const percentage = leadStats.length > 0 ? (count / leadStats.length) * 100 : 0
                 return (
                   <div key={status}>

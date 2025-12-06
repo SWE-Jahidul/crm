@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useFetch } from "@/lib/hooks"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -18,10 +17,23 @@ const STAGES = [
   { id: "lost", label: "Lost", color: "bg-red-500" },
 ]
 
+// Mock Deals Data
+const mockDeals = [
+  { _id: "1", name: "Enterprise License", value: 50000, stage: "negotiation", probability: 75, expected_close_date: "2024-04-15", customer_name: "Tech Startup Inc" },
+  { _id: "2", name: "Startup Package", value: 5000, stage: "won", probability: 100, expected_close_date: "2024-03-01", customer_name: "Global Corp" },
+  { _id: "3", name: "Consulting Project", value: 15000, stage: "qualified", probability: 50, expected_close_date: "2024-05-10", customer_name: "Design Studio" },
+  { _id: "4", name: "Maintenance Contract", value: 8000, stage: "closing", probability: 90, expected_close_date: "2024-03-20", customer_name: "Law Firm" },
+  { _id: "5", name: "Training Session", value: 2000, stage: "new", probability: 20, expected_close_date: "2024-06-01", customer_name: "Consulting Group" },
+  { _id: "6", name: "Custom Development", value: 25000, stage: "contacted", probability: 40, expected_close_date: "2024-04-30", customer_name: "Retail Chain" },
+  { _id: "7", name: "Cloud Migration", value: 12000, stage: "new", probability: 25, expected_close_date: "2024-05-20", customer_name: "Software House" },
+  { _id: "8", name: "Security Audit", value: 9000, stage: "negotiation", probability: 70, expected_close_date: "2024-04-05", customer_name: "Marketing Agency" },
+  { _id: "9", name: "API Integration", value: 6000, stage: "qualified", probability: 55, expected_close_date: "2024-05-01", customer_name: "Logistics Co" },
+  { _id: "10", name: "Mobile App V2", value: 40000, stage: "lost", probability: 0, expected_close_date: "2024-02-15", customer_name: "Real Estate" }
+]
+
 export default function PipelinePage() {
   const [formOpen, setFormOpen] = useState(false)
-  const { data: dealsData } = useFetch("/api/deals?limit=100")
-  const deals = dealsData?.data || []
+  const deals = mockDeals
 
   const dealsByStage = STAGES.reduce(
     (acc, stage) => {

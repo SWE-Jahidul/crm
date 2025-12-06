@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useFetch } from "@/lib/hooks"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -9,12 +8,26 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Search, Filter, Mail, Phone, TrendingUp } from "lucide-react"
 
+// Mock Customers Data
+const mockCustomers = [
+  { _id: "1", first_name: "Alice", last_name: "Johnson", company_name: "Tech Startup Inc", email: "alice@techstartup.com", phone: "+1 555-0101", health_score: 95, lifetime_value: 12500, tags: ["Enterprise", "High Value"] },
+  { _id: "2", first_name: "Bob", last_name: "Smith", company_name: "Global Corp", email: "bob@globalcorp.com", phone: "+1 555-0102", health_score: 88, lifetime_value: 50000, tags: ["VIP", "Reference"] },
+  { _id: "3", first_name: "Carol", last_name: "White", company_name: "Design Studio", email: "carol@design.com", phone: "+1 555-0103", health_score: 75, lifetime_value: 8000, tags: ["Creative", "SMB"] },
+  { _id: "4", first_name: "David", last_name: "Brown", company_name: "Law Firm", email: "david@law.com", phone: "+1 555-0104", health_score: 60, lifetime_value: 15000, tags: ["Professional"] },
+  { _id: "5", first_name: "Eva", last_name: "Green", company_name: "Consulting Group", email: "eva@consult.com", phone: "+1 555-0105", health_score: 92, lifetime_value: 25000, tags: ["High Value"] },
+  { _id: "6", first_name: "Frank", last_name: "Miller", company_name: "Retail Chain", email: "frank@retail.com", phone: "+1 555-0106", health_score: 55, lifetime_value: 100000, tags: ["Enterprise", "Risk"] },
+  { _id: "7", first_name: "Grace", last_name: "Lee", company_name: "Software House", email: "grace@soft.com", phone: "+1 555-0107", health_score: 85, lifetime_value: 30000, tags: ["Tech"] },
+  { _id: "8", first_name: "Henry", last_name: "Wilson", company_name: "Manufacture Co", email: "henry@manufacture.com", phone: "+1 555-0108", health_score: 70, lifetime_value: 45000, tags: ["Industrial"] },
+  { _id: "9", first_name: "Isabel", last_name: "Taylor", company_name: "Marketing Agency", email: "isabel@market.com", phone: "+1 555-0109", health_score: 80, lifetime_value: 18000, tags: ["Service"] },
+  { _id: "10", first_name: "Jack", last_name: "Anderson", company_name: "Logistics Co", email: "jack@logistics.com", phone: "+1 555-0110", health_score: 90, lifetime_value: 60000, tags: ["Transport"] }
+]
+
 export default function CustomersPage() {
   const [skip, setSkip] = useState(0)
-  const { data: customersData } = useFetch(`/api/customers?skip=${skip}&limit=20`)
 
-  const customers = customersData?.data || []
-  const total = customersData?.total || 0
+  // Paginate mock data
+  const customers = mockCustomers.slice(skip, skip + 20)
+  const total = mockCustomers.length
 
   const getHealthColor = (score: number) => {
     if (score >= 80) return "bg-green-500/10 text-green-700 dark:text-green-400"

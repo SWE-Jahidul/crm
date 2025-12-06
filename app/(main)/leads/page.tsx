@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useFetch } from "@/lib/hooks"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -10,17 +9,33 @@ import { Badge } from "@/components/ui/badge"
 import { Plus, Search, Filter, Mail, Phone } from "lucide-react"
 import { LeadForm } from "@/components/lead-form"
 
+// Mock Leads Data
+const mockLeads = [
+  { _id: "1", first_name: "John", last_name: "Doe", company: "Acme Corp", lead_score: 85, status: "qualified", lead_source: "website_form" },
+  { _id: "2", first_name: "Alice", last_name: "Smith", company: "Global Tech", lead_score: 92, status: "new", lead_source: "referral" },
+  { _id: "3", first_name: "Robert", last_name: "Johnson", company: "Consulting LLC", lead_score: 45, status: "contacted", lead_source: "linkedin" },
+  { _id: "4", first_name: "Emily", last_name: "Davis", company: "Design Studio", lead_score: 78, status: "converted", lead_source: "website_form" },
+  { _id: "5", first_name: "Michael", last_name: "Brown", company: "Law Firm", lead_score: 30, status: "lost", lead_source: "cold_call" },
+  { _id: "6", first_name: "Sarah", last_name: "Wilson", company: "Retail Chain", lead_score: 65, status: "qualified", lead_source: "conference" },
+  { _id: "7", first_name: "David", last_name: "Miller", company: "Software House", lead_score: 88, status: "new", lead_source: "referral" },
+  { _id: "8", first_name: "Jessica", last_name: "Taylor", company: "Marketing Agency", lead_score: 55, status: "contacted", lead_source: "website_form" },
+  { _id: "9", first_name: "James", last_name: "Anderson", company: "Logistics Co", lead_score: 40, status: "lost", lead_source: "cold_call" },
+  { _id: "10", first_name: "Laura", last_name: "Thomas", company: "Real Estate", lead_score: 95, status: "converted", lead_source: "other" }
+]
+
 export default function LeadsPage() {
   const [skip, setSkip] = useState(0)
   const [statusFilter, setStatusFilter] = useState("")
   const [formOpen, setFormOpen] = useState(false)
-  const { data: leadsData } = useFetch(
-    `/api/leads?skip=${skip}&limit=20${statusFilter ? `&status=${statusFilter}` : ""}`,
-  )
 
-  const leads = leadsData?.data || []
-  const total = leadsData?.total || 0
-  const pages = leadsData?.pages || 0
+  // Filter leads based on status if needed
+  const filteredLeads = statusFilter
+    ? mockLeads.filter(lead => lead.status === statusFilter)
+    : mockLeads
+
+  // Paginate mock data
+  const leads = filteredLeads.slice(skip, skip + 20)
+  const total = filteredLeads.length
 
   const getScoreBadgeColor = (score: number) => {
     if (score >= 80) return "bg-green-500/10 text-green-700 dark:text-green-400"
@@ -73,9 +88,8 @@ export default function LeadsPage() {
               setStatusFilter(status)
               setSkip(0)
             }}
-            className={`px-3 py-1 rounded-full text-sm transition-colors ${
-              statusFilter === status ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/80"
-            }`}
+            className={`px-3 py-1 rounded-full text-sm transition-colors ${statusFilter === status ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/80"
+              }`}
           >
             {status ? status.charAt(0).toUpperCase() + status.slice(1) : "All"}
           </button>
