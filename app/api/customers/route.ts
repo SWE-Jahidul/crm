@@ -1,69 +1,62 @@
-// Customers API endpoints
-
-import { type NextRequest, NextResponse } from "next/server"
-
-const mockCustomers = [
-  {
-    _id: "customer_1",
-    organization_id: "org_1",
-    first_name: "John",
-    last_name: "Doe",
-    email: "john@company.com",
-    phone: "+1-555-2001",
-    company_name: "Enterprise Corp",
-    industry: "Technology",
-    health_score: 88,
-    lifetime_value: 150000,
-    account_owner: "user_1",
-    tags: ["vip", "renewing"],
-    created_at: new Date("2024-06-01"),
-    updated_at: new Date("2025-01-05"),
-  },
-  {
-    _id: "customer_2",
-    organization_id: "org_1",
-    first_name: "Jane",
-    last_name: "Smith",
-    email: "jane@company2.com",
-    phone: "+1-555-2002",
-    company_name: "Innovation Inc",
-    industry: "Finance",
-    health_score: 75,
-    lifetime_value: 85000,
-    account_owner: "user_1",
-    tags: ["growth_potential"],
-    created_at: new Date("2024-08-15"),
-    updated_at: new Date("2025-01-04"),
-  },
-]
+import { NextRequest, NextResponse } from 'next/server'
+import connectDB from '@/lib/mongodb'
+import Customer from '@/models/Customer'
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const skip = Number.parseInt(searchParams.get("skip") || "0")
-  const limit = Number.parseInt(searchParams.get("limit") || "10")
+  try {
+    await connectDB()
 
-  const paginated = mockCustomers.slice(skip, skip + limit)
+    const { searchParams } = new URL(request.url)
+    const skip = parseInt(searchParams.get('skip') || '0')
+    const limit = parseInt(searchParams.get('limit') || '20')
 
-  return NextResponse.json({
-    data: paginated,
-    total: mockCustomers.length,
-    page: Math.floor(skip / limit) + 1,
-    pages: Math.ceil(mockCustomers.length / limit),
-  })
+    const query: any = {
+      organization_id: '000000000000000000000001',
+    }
+
+    const [customers, total] = await Promise.all([
+      Customer.find(query)
+        .sort({ created_at: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Customer.countDocuments(query),
+    ])
+
+    return NextResponse.json({
+      data: customers,
+      total,
+      page: Math.floor(skip / limit) + 1,
+      pages: Math.ceil(total / limit),
+    })
+  } catch (error: any) {
+    console.error('Error fetching customers:', error)
+    return NextResponse.json(
+      { message: error.message || 'Internal server error' },
+      { status: 500 }
+    )
+  }
 }
 
 export async function POST(request: NextRequest) {
-  const body = await request.json()
+  try {
+    await connectDB()
 
-  const newCustomer = {
-    _id: "customer_" + Date.now(),
-    organization_id: "org_1",
-    health_score: 70,
-    lifetime_value: 0,
-    ...body,
-    created_at: new Date(),
-    updated_at: new Date(),
+    const body = await request.json()
+
+    const customer = await Customer.create({
+      organization_id: '000000000000000000000001',
+      ...body,
+      created_at: new Date(),
+      updated_at: new Date(),
+    })
+
+    return NextResponse.json(customer, { status: 201 })
+  } catch (error: any) {
+    console.error('Error creating customer:', error)
+    return NextResponse.json(
+      { message: error.message || 'Internal server error' },
+      { status: 500 }
+    )
   }
-
-  return NextResponse.json(newCustomer, { status: 201 })
 }

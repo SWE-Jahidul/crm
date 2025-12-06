@@ -12,29 +12,65 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 interface LeadFormProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit?: (data: any) => void
+  onSuccess?: () => void
 }
 
-export function LeadForm({ open, onOpenChange, onSubmit }: LeadFormProps) {
+export function LeadForm({ open, onOpenChange, onSuccess }: LeadFormProps) {
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
     email: "",
     phone: "",
-    company: "",
+    company_name: "",
     position: "",
-    lead_source: "website_form",
-    status: "new",
+    source: "Website",
+    status: "New",
   })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit?.(formData)
-    onOpenChange(false)
+    setLoading(true)
+    setError("")
+
+    try {
+      const response = await fetch('/api/leads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.message || 'Failed to create lead')
+      }
+
+      // Reset form
+      setFormData({
+        first_name: "",
+        last_name: "",
+        email: "",
+        phone: "",
+        company_name: "",
+        position: "",
+        source: "Website",
+        status: "New",
+      })
+
+      onOpenChange(false)
+      onSuccess?.()
+    } catch (err: any) {
+      setError(err.message || 'Failed to create lead')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -46,35 +82,44 @@ export function LeadForm({ open, onOpenChange, onSubmit }: LeadFormProps) {
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 rounded-lg">
+              {error}
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="first_name">First Name</Label>
+              <Label htmlFor="first_name">First Name *</Label>
               <Input
                 id="first_name"
                 placeholder="John"
                 value={formData.first_name}
                 onChange={(e) => handleChange("first_name", e.target.value)}
+                required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="last_name">Last Name</Label>
+              <Label htmlFor="last_name">Last Name *</Label>
               <Input
                 id="last_name"
                 placeholder="Doe"
                 value={formData.last_name}
                 onChange={(e) => handleChange("last_name", e.target.value)}
+                required
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Email *</Label>
             <Input
               id="email"
               type="email"
               placeholder="john@example.com"
               value={formData.email}
               onChange={(e) => handleChange("email", e.target.value)}
+              required
             />
           </div>
 
@@ -94,8 +139,8 @@ export function LeadForm({ open, onOpenChange, onSubmit }: LeadFormProps) {
               <Input
                 id="company"
                 placeholder="Acme Inc"
-                value={formData.company}
-                onChange={(e) => handleChange("company", e.target.value)}
+                value={formData.company_name}
+                onChange={(e) => handleChange("company_name", e.target.value)}
               />
             </div>
             <div className="space-y-2">
@@ -111,29 +156,31 @@ export function LeadForm({ open, onOpenChange, onSubmit }: LeadFormProps) {
 
           <div className="space-y-2">
             <Label htmlFor="source">Lead Source</Label>
-            <Select value={formData.lead_source} onValueChange={(value) => handleChange("lead_source", value)}>
+            <Select value={formData.source} onValueChange={(value) => handleChange("source", value)}>
               <SelectTrigger id="source">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="website_form">Website Form</SelectItem>
-                <SelectItem value="referral">Referral</SelectItem>
-                <SelectItem value="email">Email Campaign</SelectItem>
-                <SelectItem value="inbound_call">Inbound Call</SelectItem>
-                <SelectItem value="event">Event</SelectItem>
+                <SelectItem value="Website">Website</SelectItem>
+                <SelectItem value="Referral">Referral</SelectItem>
+                <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                <SelectItem value="Event">Event</SelectItem>
+                <SelectItem value="Ads">Ads</SelectItem>
+                <SelectItem value="Cold Call">Cold Call</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="flex gap-2 pt-4">
-            <Button type="submit" className="flex-1">
-              Create Lead
+            <Button type="submit" className="flex-1" disabled={loading}>
+              {loading ? 'Creating...' : 'Create Lead'}
             </Button>
             <Button
               type="button"
               variant="outline"
               className="flex-1 bg-transparent"
               onClick={() => onOpenChange(false)}
+              disabled={loading}
             >
               Cancel
             </Button>

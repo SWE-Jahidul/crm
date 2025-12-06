@@ -1,98 +1,69 @@
-// Leads API endpoints
-
-import { type NextRequest, NextResponse } from "next/server"
-
-// Mock leads data
-const mockLeads = [
-  {
-    _id: "lead_1",
-    organization_id: "org_1",
-    first_name: "Alice",
-    last_name: "Johnson",
-    email: "alice@prospect.com",
-    phone: "+1-555-1001",
-    company: "Tech Startup Inc",
-    position: "Marketing Manager",
-    status: "qualified",
-    lead_score: 85,
-    lead_source: "website_form",
-    assigned_to: "user_1",
-    assigned_at: new Date("2025-01-01"),
-    tags: ["enterprise", "high_priority"],
-    created_at: new Date("2025-01-01"),
-    updated_at: new Date("2025-01-05"),
-  },
-  {
-    _id: "lead_2",
-    organization_id: "org_1",
-    first_name: "Bob",
-    last_name: "Smith",
-    email: "bob@prospect.com",
-    phone: "+1-555-1002",
-    company: "Finance Corp",
-    position: "CFO",
-    status: "contacted",
-    lead_score: 72,
-    lead_source: "referral",
-    assigned_to: "user_1",
-    assigned_at: new Date("2025-01-02"),
-    tags: ["enterprise"],
-    created_at: new Date("2025-01-02"),
-    updated_at: new Date("2025-01-04"),
-  },
-  {
-    _id: "lead_3",
-    organization_id: "org_1",
-    first_name: "Carol",
-    last_name: "Wilson",
-    email: "carol@prospect.com",
-    phone: "+1-555-1003",
-    company: "Marketing Agency",
-    position: "Founder",
-    status: "new",
-    lead_score: 45,
-    lead_source: "cold_email",
-    assigned_to: "user_1",
-    assigned_at: new Date("2025-01-03"),
-    tags: ["smb"],
-    created_at: new Date("2025-01-03"),
-    updated_at: new Date("2025-01-03"),
-  },
-]
+import { NextRequest, NextResponse } from 'next/server'
+import connectDB from '@/lib/mongodb'
+import Lead from '@/models/Lead'
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const skip = Number.parseInt(searchParams.get("skip") || "0")
-  const limit = Number.parseInt(searchParams.get("limit") || "10")
-  const status = searchParams.get("status")
+  try {
+    await connectDB()
 
-  let filtered = mockLeads
-  if (status) {
-    filtered = filtered.filter((lead) => lead.status === status)
+    const { searchParams } = new URL(request.url)
+    const skip = parseInt(searchParams.get('skip') || '0')
+    const limit = parseInt(searchParams.get('limit') || '20')
+    const status = searchParams.get('status')
+    const source = searchParams.get('source')
+
+    // Build query
+    const query: any = {}
+    if (status) query.status = status
+    if (source) query.source = source
+
+    // For now, use a demo organization ID
+    // In production, this would come from the authenticated user's session
+    query.organization_id = '000000000000000000000001'
+
+    const [leads, total] = await Promise.all([
+      Lead.find(query)
+        .sort({ created_at: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Lead.countDocuments(query),
+    ])
+
+    return NextResponse.json({
+      data: leads,
+      total,
+      page: Math.floor(skip / limit) + 1,
+      pages: Math.ceil(total / limit),
+    })
+  } catch (error: any) {
+    console.error('Error fetching leads:', error)
+    return NextResponse.json(
+      { message: error.message || 'Internal server error' },
+      { status: 500 }
+    )
   }
-
-  const paginated = filtered.slice(skip, skip + limit)
-
-  return NextResponse.json({
-    data: paginated,
-    total: filtered.length,
-    page: Math.floor(skip / limit) + 1,
-    pages: Math.ceil(filtered.length / limit),
-  })
 }
 
 export async function POST(request: NextRequest) {
-  const body = await request.json()
+  try {
+    await connectDB()
 
-  const newLead = {
-    _id: "lead_" + Date.now(),
-    organization_id: "org_1",
-    ...body,
-    created_at: new Date(),
-    updated_at: new Date(),
-    lead_score: 50,
-    status: "new",
+    const body = await request.json()
+
+    const lead = await Lead.create({
+      organization_id: '000000000000000000000001',
+      ...body,
+      created_at: new Date(),
+      updated_at: new Date(),
+    })
+
+    return NextResponse.json(lead, { status: 201 })
+  } catch (error: any) {
+    console.error('Error creating lead:', error)
+    return NextResponse.json(
+      { message: error.message || 'Internal server error' },
+      { status: 500 }
+    )
   }
-
-  return NextResponse.json(newLead, { status: 201 })
 }

@@ -7,30 +7,29 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Search, Filter, Clock, AlertCircle, CheckCircle2 } from "lucide-react"
+import { Plus, Search, Filter, Clock, AlertCircle, CheckCircle2, Calendar } from "lucide-react"
 import { TaskForm } from "@/components/task-form"
-
-// Mock Tasks Data
-const mockTasks = [
-  { _id: "1", title: "Follow up with Alice", status: "open", priority: "high", category: "call", due_date: "2024-03-20", description: "Discuss contract details", related_to_type: "lead" },
-  { _id: "2", title: "Prepare proposal for Global Corp", status: "completed", priority: "medium", category: "email", due_date: "2024-03-18", description: "Send initial draft", related_to_type: "customer" },
-  { _id: "3", title: "Schedule demo", status: "open", priority: "medium", category: "meeting", due_date: "2024-03-21", description: "Product demonstration", related_to_type: "lead" },
-  { _id: "4", title: "Email marketing campaign", status: "open", priority: "low", category: "email", due_date: "2024-03-22", description: "Q2 Newsletter", related_to_type: "general" },
-  { _id: "5", title: "Review quarterly report", status: "cancelled", priority: "high", category: "other", due_date: "2024-03-15", description: "Internal review", related_to_type: "internal" },
-  { _id: "6", title: "Client lunch", status: "open", priority: "medium", category: "meeting", due_date: "2024-03-25", description: "Discuss expansion", related_to_type: "customer" }
-]
+import { useFetch } from "@/lib/hooks"
 
 export default function TasksPage() {
   const [statusFilter, setStatusFilter] = useState("open")
   const [formOpen, setFormOpen] = useState(false)
 
-  // Filter mock tasks
-  const tasks = mockTasks.filter(task => {
-    if (statusFilter === "open") return task.status === "open"
-    if (statusFilter === "completed") return task.status === "completed"
-    if (statusFilter === "cancelled") return task.status === "cancelled"
-    return true
-  })
+  // Build query string
+  const queryString = `/tasks?status=${statusFilter}&limit=100`
+
+  // Fetch tasks from API
+  const { data: response, loading } = useFetch<any>(queryString)
+
+  const tasks = response?.data || []
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    )
+  }
 
   const getPriorityColor = (priority: string) => {
     const colors: Record<string, string> = {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,30 +16,40 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-
-// Mock Leads Data
-const mockLeads = [
-  { _id: "1", first_name: "Alice", last_name: "Johnson", email: "alice@techstartup.com", phone: "+1 555-0101", company_name: "Tech Startup Inc", status: "New", source: "Website", created_at: "2024-03-10T10:00:00Z" },
-  { _id: "2", first_name: "Bob", last_name: "Smith", email: "bob@globalcorp.com", phone: "+1 555-0102", company_name: "Global Corp", status: "Qualified", source: "Referral", created_at: "2024-03-09T14:30:00Z" },
-  { _id: "3", first_name: "Carol", last_name: "White", email: "carol@design.com", phone: "+1 555-0103", company_name: "Design Studio", status: "Contacted", source: "LinkedIn", created_at: "2024-03-08T09:15:00Z" },
-  { _id: "4", first_name: "David", last_name: "Brown", email: "david@law.com", phone: "+1 555-0104", company_name: "Law Firm", status: "Converted", source: "Event", created_at: "2024-03-07T16:45:00Z" },
-  { _id: "5", first_name: "Eva", last_name: "Green", email: "eva@consult.com", phone: "+1 555-0105", company_name: "Consulting Group", status: "Lost", source: "Website", created_at: "2024-03-06T11:20:00Z" },
-  { _id: "6", first_name: "Frank", last_name: "Miller", email: "frank@retail.com", phone: "+1 555-0106", company_name: "Retail Chain", status: "New", source: "Ads", created_at: "2024-03-05T13:10:00Z" },
-  { _id: "7", first_name: "Grace", last_name: "Lee", email: "grace@soft.com", phone: "+1 555-0107", company_name: "Software House", status: "Qualified", source: "Referral", created_at: "2024-03-04T15:55:00Z" },
-  { _id: "8", first_name: "Henry", last_name: "Wilson", email: "henry@manufacture.com", phone: "+1 555-0108", company_name: "Manufacture Co", status: "Contacted", source: "Cold Call", created_at: "2024-03-03T08:40:00Z" },
-  { _id: "9", first_name: "Isabel", last_name: "Taylor", email: "isabel@market.com", phone: "+1 555-0109", company_name: "Marketing Agency", status: "New", source: "Website", created_at: "2024-03-02T12:25:00Z" },
-  { _id: "10", first_name: "Jack", last_name: "Anderson", email: "jack@logistics.com", phone: "+1 555-0110", company_name: "Logistics Co", status: "Qualified", source: "LinkedIn", created_at: "2024-03-01T10:50:00Z" }
-]
+import { useFetch } from "@/lib/hooks"
 
 export default function LeadsPage() {
   const [skip, setSkip] = useState(0)
   const [statusFilter, setStatusFilter] = useState("")
   const [formOpen, setFormOpen] = useState(false)
 
-  // Filter and paginate mock data
-  const filteredLeads = mockLeads.filter(lead => statusFilter ? lead.status === statusFilter : true)
-  const leads = filteredLeads.slice(skip, skip + 20)
-  const total = filteredLeads.length
+  // Build query string
+  const queryString = `/leads?skip=${skip}&limit=20${statusFilter ? `&status=${statusFilter}` : ''}`
+
+  // Fetch leads from API
+  const { data: response, loading, error, setData } = useFetch<any>(queryString)
+
+  const leads = response?.data || []
+  const total = response?.total || 0
+
+  const handleDelete = async (leadId: string) => {
+    if (!confirm('Are you sure you want to delete this lead?')) return
+
+    try {
+      const response = await fetch(`/api/leads/${leadId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete lead')
+      }
+
+      // Refresh the list
+      window.location.reload()
+    } catch (error) {
+      alert('Failed to delete lead')
+    }
+  }
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -159,7 +169,12 @@ export default function LeadsPage() {
                           <DropdownMenuItem>View Details</DropdownMenuItem>
                           <DropdownMenuItem>Edit Lead</DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600 dark:text-red-400">Delete</DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-red-600 dark:text-red-400"
+                            onClick={() => handleDelete(lead._id)}
+                          >
+                            Delete
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

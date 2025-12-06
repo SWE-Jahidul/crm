@@ -3,43 +3,33 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts"
 import { TrendingUp, Users, Target, CheckCircle2, ArrowUpRight, DollarSign, Activity } from "lucide-react"
-
-// Mock Data
-const mockLeads = [
-  { id: 1, name: "Alice Johnson", status: "qualified", company: "Tech Startup Inc" },
-  { id: 2, name: "Bob Smith", status: "new", company: "Global Corp" },
-  { id: 3, name: "Carol White", status: "contacted", company: "Design Studio" },
-  { id: 4, name: "David Brown", status: "converted", company: "Law Firm" },
-  { id: 5, name: "Eva Green", status: "lost", company: "Consulting Group" },
-  { id: 6, name: "Frank Miller", status: "qualified", company: "Retail Chain" },
-  { id: 7, name: "Grace Lee", status: "new", company: "Software House" },
-]
-
-const mockDeals = [
-  { id: 1, title: "Enterprise License", value: 50000, stage: "negotiation" },
-  { id: 2, title: "Startup Package", value: 5000, stage: "won" },
-  { id: 3, title: "Consulting Project", value: 15000, stage: "qualified" },
-  { id: 4, title: "Maintenance Contract", value: 8000, stage: "closing" },
-  { id: 5, title: "Training Session", value: 2000, stage: "new" },
-  { id: 6, title: "Custom Development", value: 25000, stage: "contacted" },
-]
-
-const mockTasks = [
-  { id: 1, title: "Follow up with Alice", status: "open", dueDate: "2024-03-20" },
-  { id: 2, title: "Prepare proposal for Global Corp", status: "completed", dueDate: "2024-03-18" },
-  { id: 3, title: "Schedule demo", status: "open", dueDate: "2024-03-21" },
-  { id: 4, title: "Email marketing campaign", status: "open", dueDate: "2024-03-22" },
-]
+import { useFetch } from "@/lib/hooks"
 
 export default function DashboardPage() {
-  const leadStats = mockLeads
-  const dealStats = mockDeals
-  const taskStats = mockTasks
+  // Fetch dashboard stats from API
+  const { data: dashboardData, loading: statsLoading } = useFetch<any>('/dashboard/stats')
+  const { data: leadsResponse, loading: leadsLoading } = useFetch<any>('/leads?limit=100')
+  const { data: dealsResponse, loading: dealsLoading } = useFetch<any>('/deals?limit=100')
 
-  const pipelineValue = dealStats.reduce((sum, deal) => sum + deal.value, 0)
-  const dealsWon = dealStats.filter((d) => d.stage === "won").length
+  if (statsLoading || leadsLoading || dealsLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  const stats = dashboardData?.stats || {}
+  const leadStats = leadsResponse?.data || []
+  const dealStats = dealsResponse?.data || []
+
+  const pipelineValue = stats.pipelineValue || 0
+  const dealsWon = stats.wonDeals || 0
   const avgDealSize = dealStats.length > 0 ? Math.round(pipelineValue / dealStats.length) : 0
-  const openTasks = taskStats.filter((t) => t.status === "open").length
+  const openTasks = stats.openTasks || 0
 
   const stageDistribution = [
     { name: "New", value: dealStats.filter((d) => d.stage === "new").length },
