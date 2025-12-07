@@ -28,9 +28,12 @@ const STAGES = [
 
 export default function PipelinePage() {
   const [formOpen, setFormOpen] = useState(false)
+  const [editingDeal, setEditingDeal] = useState<any>(null)
+  const [initialStage, setInitialStage] = useState<string | undefined>()
 
   // Fetch deals from API
-  const { data: response, loading } = useFetch<any>('/deals?limit=100')
+  const queryString = '/deals?limit=100'
+  const { data: response, loading, setData } = useFetch<any>(queryString)
 
   if (loading) {
     return (
@@ -41,6 +44,49 @@ export default function PipelinePage() {
   }
 
   const deals = response?.data || []
+
+  const handleDelete = async (dealId: string) => {
+    if (!confirm('Are you sure you want to delete this deal?')) return
+
+    try {
+      const response = await fetch(`/api/deals/${dealId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete deal')
+      }
+
+      // Refresh the list
+      window.location.reload()
+    } catch (error) {
+      alert('Failed to delete deal')
+    }
+  }
+
+  const handleEdit = (deal: any) => {
+    setEditingDeal(deal)
+    setInitialStage(undefined)
+    setFormOpen(true)
+  }
+
+  const handleStageAdd = (stageId: string) => {
+    setEditingDeal(null)
+    setInitialStage(stageId)
+    setFormOpen(true)
+  }
+
+  const handleFormSuccess = () => {
+    window.location.reload()
+  }
+
+  const handleFormClose = (open: boolean) => {
+    setFormOpen(open)
+    if (!open) {
+      setEditingDeal(null)
+      setInitialStage(undefined)
+    }
+  }
 
   const dealsByStage = STAGES.reduce(
     (acc, stage) => {
@@ -130,10 +176,15 @@ export default function PipelinePage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>Edit Deal</DropdownMenuItem>
-                            <DropdownMenuItem>Move Stage</DropdownMenuItem>
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => handleEdit(deal)}>Edit Deal</DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-red-600 dark:text-red-400"
+                              onClick={() => handleDelete(deal._id)}
+                            >
+                              Delete
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -165,7 +216,11 @@ export default function PipelinePage() {
                 ))}
 
                 {/* Add Deal Button (Ghost) */}
-                <Button variant="ghost" className="w-full border border-dashed border-slate-200 dark:border-slate-800 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 h-10">
+                <Button
+                  variant="ghost"
+                  onClick={() => handleStageAdd(stage.id)}
+                  className="w-full border border-dashed border-slate-200 dark:border-slate-800 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 h-10"
+                >
                   <Plus size={16} className="mr-2" />
                   Add Deal
                 </Button>
@@ -175,7 +230,13 @@ export default function PipelinePage() {
         </div>
       </div>
 
-      <DealForm open={formOpen} onOpenChange={setFormOpen} />
+      <DealForm
+        open={formOpen}
+        onOpenChange={handleFormClose}
+        deal={editingDeal}
+        initialStage={initialStage}
+        onSuccess={handleFormSuccess}
+      />
     </div>
   )
 }
