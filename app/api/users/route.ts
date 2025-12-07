@@ -50,9 +50,9 @@ export async function POST(request: Request) {
             )
         }
 
-        // For demo: Default password since we don't have email invite flow
-        const salt = await bcrypt.genSalt(10)
-        const passwordHash = await bcrypt.hash('password123', salt)
+        // Use provided password or default if missing
+        const passwordToHash = body.password || 'password123'
+        const password_hash = await bcrypt.hash(passwordToHash, 10)
 
         const user = await User.create({
             organization_id: new mongoose.Types.ObjectId(DEMO_ORG_ID),
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
             last_name: body.last_name,
             email: body.email,
             role: body.role,
-            password_hash: passwordHash,
+            password_hash: password_hash,
             status: 'active'
         })
 

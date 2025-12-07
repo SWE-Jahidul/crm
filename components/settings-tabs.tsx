@@ -13,7 +13,7 @@ import { useFetch } from "@/lib/hooks"
 
 export function SettingsTabs() {
   const [activeTab, setActiveTab] = useState("general")
-  const [newMember, setNewMember] = useState({ email: "", role: "sales_executive" })
+  const [newMember, setNewMember] = useState({ email: "", password: "", role: "sales_executive" })
   const [editingMember, setEditingMember] = useState<any>(null)
 
   // Organization state
@@ -73,6 +73,11 @@ export function SettingsTabs() {
         alert(`User updated successfully`)
       } else {
         // Create new member
+        if (!newMember.password) {
+          alert('Please enter a password for the new user')
+          return
+        }
+
         const name = newMember.email.split('@')[0]
         const firstName = name
         const lastName = 'User'
@@ -82,6 +87,7 @@ export function SettingsTabs() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             email: newMember.email,
+            password: newMember.password,
             role: newMember.role,
             first_name: firstName,
             last_name: lastName
@@ -95,7 +101,7 @@ export function SettingsTabs() {
         alert(`Invitation sent to ${newMember.email} as ${newMember.role}`)
       }
 
-      setNewMember({ email: "", role: "sales_executive" })
+      setNewMember({ email: "", password: "", role: "sales_executive" })
       setEditingMember(null)
       window.location.reload()
     } catch (error: any) {
@@ -107,13 +113,14 @@ export function SettingsTabs() {
     setEditingMember(member)
     setNewMember({
       email: member.email,
-      role: member.role === 'sales_exec' ? 'sales_executive' : member.role
+      role: member.role === 'sales_exec' ? 'sales_executive' : member.role,
+      password: ""
     })
   }
 
   const handleCancelEdit = () => {
     setEditingMember(null)
-    setNewMember({ email: "", role: "sales_executive" })
+    setNewMember({ email: "", password: "", role: "sales_executive" })
   }
 
   const handleDeleteMember = async (member: any) => {
@@ -333,6 +340,19 @@ export function SettingsTabs() {
                     className="bg-white dark:bg-slate-950"
                   />
                 </div>
+                {!editingMember && (
+                  <div className="space-y-2">
+                    <Label htmlFor="member-password">Password</Label>
+                    <Input
+                      id="member-password"
+                      type="text"
+                      placeholder="User password"
+                      value={newMember.password || ""}
+                      onChange={(e) => setNewMember({ ...newMember, password: e.target.value })}
+                      className="bg-white dark:bg-slate-950"
+                    />
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="member-role">Assign Role</Label>
                   <Select value={newMember.role} onValueChange={(role) => setNewMember({ ...newMember, role })}>
