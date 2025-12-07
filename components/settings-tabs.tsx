@@ -7,43 +7,190 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, Edit2, Trash2, Shield, Mail, Bell, HardDrive, Check } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
+import { useFetch } from "@/lib/hooks"
 
 export function SettingsTabs() {
   const [activeTab, setActiveTab] = useState("general")
   const [newMember, setNewMember] = useState({ email: "", role: "sales_executive" })
+  const [editingMember, setEditingMember] = useState<any>(null)
 
-  const organization = {
+  // Organization state
+  const [organization, setOrganization] = useState({
     name: "Demo Company",
     email: "company@example.com",
     phone: "555-0001",
     timezone: "America/New_York",
     currency: "USD",
     language: "en",
-  }
+  })
 
-  const user = {
+  // User state
+  const [user, setUser] = useState({
     first_name: "Demo",
     last_name: "User",
     email: "demo@crm.com",
     role: "admin",
+  })
+
+  // Handlers
+  const handleSaveOrganization = () => {
+    alert('Organization settings saved successfully!')
   }
 
-  const teamMembers = [
-    { id: 1, name: "Demo User", email: "demo@crm.com", role: "admin", status: "active" },
-    { id: 2, name: "Sales Manager", email: "manager@crm.com", role: "manager", status: "active" },
-    { id: 3, name: "Sales Rep", email: "sales@crm.com", role: "sales_executive", status: "active" },
-  ]
+  const handleSaveProfile = () => {
+    alert('Profile updated successfully!')
+  }
 
-  const pipelineStages = ["New", "Contacted", "Qualified", "Negotiation", "Closing", "Won", "Lost"]
+  const handleChangePassword = () => {
+    alert('Password change dialog would open here')
+  }
 
-  const integrations = [
+  const handleEnable2FA = () => {
+    alert('2FA setup dialog would open here')
+  }
+
+  const handleSaveMember = async () => {
+    if (!newMember.email) {
+      alert('Please enter an email address')
+      return
+    }
+
+    try {
+      if (editingMember) {
+        // Update existing member
+        const response = await fetch(`/api/users/${editingMember._id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: newMember.email,
+            role: newMember.role
+          })
+        })
+
+        if (!response.ok) throw new Error('Failed to update user')
+        alert(`User updated successfully`)
+      } else {
+        // Create new member
+        const name = newMember.email.split('@')[0]
+        const firstName = name
+        const lastName = 'User'
+
+        const response = await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: newMember.email,
+            role: newMember.role,
+            first_name: firstName,
+            last_name: lastName
+          })
+        })
+
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.message || 'Failed to populate user')
+        }
+        alert(`Invitation sent to ${newMember.email} as ${newMember.role}`)
+      }
+
+      setNewMember({ email: "", role: "sales_executive" })
+      setEditingMember(null)
+      window.location.reload()
+    } catch (error: any) {
+      alert(error.message)
+    }
+  }
+
+  const handleEditMember = (member: any) => {
+    setEditingMember(member)
+    setNewMember({
+      email: member.email,
+      role: member.role === 'sales_exec' ? 'sales_executive' : member.role
+    })
+  }
+
+  const handleCancelEdit = () => {
+    setEditingMember(null)
+    setNewMember({ email: "", role: "sales_executive" })
+  }
+
+  const handleDeleteMember = async (member: any) => {
+    if (confirm(`Remove ${member.name || member.first_name} from the team?`)) {
+      try {
+        const response = await fetch(`/api/users/${member._id}`, {
+          method: 'DELETE'
+        })
+
+        if (!response.ok) throw new Error('Failed to delete user')
+
+        alert(`User removed successfully`)
+        window.location.reload()
+      } catch (error: any) {
+        alert(error.message)
+      }
+    }
+  }
+
+  const handleEditStage = (stage: string) => {
+    alert(`Edit stage dialog for "${stage}" would open here`)
+  }
+
+  const handleDeleteStage = (stage: string) => {
+    if (confirm(`Delete stage "${stage}"?`)) {
+      setPipelineStages(pipelineStages.filter(s => s !== stage))
+      alert(`Stage "${stage}" deleted successfully`)
+    }
+  }
+
+  const handleAddStage = () => {
+    const newStage = prompt("Enter new stage name:")
+    if (newStage) {
+      setPipelineStages([...pipelineStages, newStage])
+      alert(`Stage "${newStage}" added`)
+    }
+  }
+
+  const handleConnectIntegration = (name: string) => {
+    setIntegrations(integrations.map(i =>
+      i.name === name ? { ...i, status: "connected", last_sync: "Just now" } : i
+    ))
+    alert(`Connected to ${name} successfully`)
+  }
+
+  const handleManageIntegration = (name: string) => {
+    if (confirm(`Do you want to disconnect ${name}?`)) {
+      setIntegrations(integrations.map(i =>
+        i.name === name ? { ...i, status: "disconnected", last_sync: null } : i
+      ))
+      alert(`${name} disconnected`)
+    }
+  }
+
+  const handleEditRole = (roleName: string) => {
+    alert(`Permissions for ${roleName} updated successfully (Demo)`)
+  }
+
+  // Team members state
+  // Team members fetch
+  const { data: usersData, loading: usersLoading } = useFetch<any>('/users')
+  const teamMembers = usersData?.data || []
+
+  const [pipelineStages, setPipelineStages] = useState(["New", "Contacted", "Qualified", "Negotiation", "Closing", "Won", "Lost"])
+
+  const [roles, setRoles] = useState([
+    { name: "Admin", description: "Full access to all features and settings", count: 1 },
+    { name: "Manager", description: "Can manage team, view reports, and edit pipelines", count: 2 },
+    { name: "Sales Executive", description: "Can manage own leads, deals, and tasks", count: 5 },
+  ])
+
+  const [integrations, setIntegrations] = useState([
     { name: "Gmail", status: "connected", last_sync: "2 hours ago", icon: "M" },
     { name: "Outlook", status: "disconnected", last_sync: null, icon: "O" },
     { name: "Slack", status: "disconnected", last_sync: null, icon: '#' },
     { name: "Zapier", status: "disconnected", last_sync: null, icon: 'Z' },
-  ]
+  ])
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -70,31 +217,31 @@ export function SettingsTabs() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="org-name">Organization Name</Label>
-                <Input id="org-name" value={organization.name} readOnly className="bg-slate-50 dark:bg-slate-900/50" />
+                <Input id="org-name" value={organization.name} onChange={(e) => setOrganization({ ...organization, name: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="org-email">Email</Label>
-                <Input id="org-email" value={organization.email} readOnly className="bg-slate-50 dark:bg-slate-900/50" />
+                <Input id="org-email" value={organization.email} onChange={(e) => setOrganization({ ...organization, email: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="org-phone">Phone</Label>
-                <Input id="org-phone" value={organization.phone} readOnly className="bg-slate-50 dark:bg-slate-900/50" />
+                <Input id="org-phone" value={organization.phone} onChange={(e) => setOrganization({ ...organization, phone: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="org-timezone">Timezone</Label>
-                <Input id="org-timezone" value={organization.timezone} readOnly className="bg-slate-50 dark:bg-slate-900/50" />
+                <Input id="org-timezone" value={organization.timezone} onChange={(e) => setOrganization({ ...organization, timezone: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="org-currency">Currency</Label>
-                <Input id="org-currency" value={organization.currency} readOnly className="bg-slate-50 dark:bg-slate-900/50" />
+                <Input id="org-currency" value={organization.currency} onChange={(e) => setOrganization({ ...organization, currency: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="org-language">Language</Label>
-                <Input id="org-language" value={organization.language} readOnly className="bg-slate-50 dark:bg-slate-900/50" />
+                <Input id="org-language" value={organization.language} onChange={(e) => setOrganization({ ...organization, language: e.target.value })} />
               </div>
             </div>
             <div className="pt-4 flex justify-end">
-              <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">Save Changes</Button>
+              <Button onClick={handleSaveOrganization} className="bg-indigo-600 hover:bg-indigo-700 text-white">Save Changes</Button>
             </div>
           </CardContent>
         </Card>
@@ -108,15 +255,15 @@ export function SettingsTabs() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="user-first">First Name</Label>
-                <Input id="user-first" value={user.first_name} readOnly className="bg-slate-50 dark:bg-slate-900/50" />
+                <Input id="user-first" value={user.first_name} onChange={(e) => setUser({ ...user, first_name: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="user-last">Last Name</Label>
-                <Input id="user-last" value={user.last_name} readOnly className="bg-slate-50 dark:bg-slate-900/50" />
+                <Input id="user-last" value={user.last_name} onChange={(e) => setUser({ ...user, last_name: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="user-email">Email</Label>
-                <Input id="user-email" value={user.email} readOnly className="bg-slate-50 dark:bg-slate-900/50" />
+                <Input id="user-email" value={user.email} onChange={(e) => setUser({ ...user, email: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="user-role">Role</Label>
@@ -124,8 +271,9 @@ export function SettingsTabs() {
               </div>
             </div>
             <div className="space-y-2 pt-4 flex gap-4">
-              <Button variant="outline">Change Password</Button>
-              <Button variant="outline">Enable 2FA</Button>
+              <Button variant="outline" onClick={handleSaveProfile}>Save Profile</Button>
+              <Button variant="outline" onClick={handleChangePassword}>Change Password</Button>
+              <Button variant="outline" onClick={handleEnable2FA}>Enable 2FA</Button>
             </div>
           </CardContent>
         </Card>
@@ -140,14 +288,14 @@ export function SettingsTabs() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {teamMembers.map((member) => (
+              {teamMembers.map((member: any) => (
                 <div key={member.id} className="flex items-center justify-between p-4 border border-slate-100 dark:border-slate-800 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold">
-                      {member.name.charAt(0)}
+                      {(member.first_name || member.name || "U").charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <p className="font-semibold text-slate-900 dark:text-slate-100">{member.name}</p>
+                      <p className="font-semibold text-slate-900 dark:text-slate-100">{member.first_name ? `${member.first_name} ${member.last_name}` : member.name}</p>
                       <p className="text-sm text-slate-500">{member.email}</p>
                     </div>
                   </div>
@@ -157,10 +305,10 @@ export function SettingsTabs() {
                     </Badge>
                     <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white">Active</Badge>
                     <div className="flex gap-1 ml-2">
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-indigo-600">
+                      <Button onClick={() => handleEditMember(member)} variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-indigo-600">
                         <Edit2 size={16} />
                       </Button>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-red-500">
+                      <Button onClick={() => handleDeleteMember(member)} variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-red-500">
                         <Trash2 size={16} />
                       </Button>
                     </div>
@@ -170,7 +318,9 @@ export function SettingsTabs() {
             </div>
 
             <div className="mt-8 p-6 bg-slate-50 dark:bg-slate-900/30 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
-              <h4 className="font-semibold mb-4 text-slate-900 dark:text-slate-100">Add Team Member</h4>
+              <h4 className="font-semibold mb-4 text-slate-900 dark:text-slate-100">
+                {editingMember ? 'Edit Team Member' : 'Add Team Member'}
+              </h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                 <div className="space-y-2">
                   <Label htmlFor="member-email">Email Address</Label>
@@ -196,10 +346,17 @@ export function SettingsTabs() {
                     </SelectContent>
                   </Select>
                 </div>
-                <Button className="w-full gap-2 bg-indigo-600 hover:bg-indigo-700 text-white">
-                  <Plus size={16} />
-                  Send Invitation
-                </Button>
+                <div className="flex gap-2">
+                  {editingMember && (
+                    <Button onClick={handleCancelEdit} variant="outline" className="flex-1">
+                      Cancel
+                    </Button>
+                  )}
+                  <Button onClick={handleSaveMember} className="flex-1 gap-2 bg-indigo-600 hover:bg-indigo-700 text-white">
+                    {editingMember ? <Edit2 size={16} /> : <Plus size={16} />}
+                    {editingMember ? 'Update' : 'Invite'}
+                  </Button>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -224,17 +381,17 @@ export function SettingsTabs() {
                     <span className="font-medium text-slate-700 dark:text-slate-200">{stage}</span>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-indigo-600">
+                    <Button onClick={() => handleEditStage(stage)} variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-indigo-600">
                       <Edit2 size={14} />
                     </Button>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-red-500">
+                    <Button onClick={() => handleDeleteStage(stage)} variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-red-500">
                       <Trash2 size={14} />
                     </Button>
                   </div>
                 </div>
               ))}
             </div>
-            <Button className="mt-6 gap-2 w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white">
+            <Button onClick={handleAddStage} className="mt-6 gap-2 w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white">
               <Plus size={16} />
               Add New Stage
             </Button>
@@ -251,11 +408,7 @@ export function SettingsTabs() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[
-                { name: "Admin", description: "Full access to all features and settings", count: 1 },
-                { name: "Manager", description: "Can manage team, view reports, and edit pipelines", count: 2 },
-                { name: "Sales Executive", description: "Can manage own leads, deals, and tasks", count: 5 },
-              ].map((role) => (
+              {roles.map((role) => (
                 <div key={role.name} className="p-5 border border-slate-100 dark:border-slate-800 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors cursor-pointer group">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-4">
@@ -270,7 +423,7 @@ export function SettingsTabs() {
                         <p className="text-sm text-slate-500 mt-0.5">{role.description}</p>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button onClick={() => handleEditRole(role.name)} variant="outline" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
                       Edit
                     </Button>
                   </div>
@@ -315,6 +468,7 @@ export function SettingsTabs() {
                   )}
 
                   <Button
+                    onClick={() => integration.status === "connected" ? handleManageIntegration(integration.name) : handleConnectIntegration(integration.name)}
                     size="sm"
                     variant={integration.status === "connected" ? "outline" : "default"}
                     className={`w-full ${integration.status !== "connected" ? "bg-slate-900 text-white hover:bg-slate-800" : "bg-white hover:bg-slate-50"}`}

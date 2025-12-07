@@ -26,8 +26,8 @@ const UserSchema = new Schema({
     phone: String,
     role: {
         type: String,
-        enum: ['admin', 'manager', 'sales_exec', 'support'],
-        default: 'sales_exec',
+        enum: ['admin', 'manager', 'sales_executive', 'sales_exec', 'support'],
+        default: 'sales_executive',
     },
     status: {
         type: String,
