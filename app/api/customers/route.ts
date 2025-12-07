@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import Customer from '@/models/Customer'
+import mongoose from 'mongoose'
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20')
 
     const query: any = {
-      organization_id: '000000000000000000000001',
+      organization_id: new mongoose.Types.ObjectId('000000000000000000000001'),
     }
 
     const [customers, total] = await Promise.all([
@@ -43,19 +44,30 @@ export async function POST(request: NextRequest) {
     await connectDB()
 
     const body = await request.json()
+    console.log('Creating customer with data:', JSON.stringify(body, null, 2))
 
     const customer = await Customer.create({
-      organization_id: '000000000000000000000001',
+      organization_id: new mongoose.Types.ObjectId('000000000000000000000001'),
       ...body,
       created_at: new Date(),
       updated_at: new Date(),
     })
 
+    console.log('Customer created successfully:', customer._id)
     return NextResponse.json(customer, { status: 201 })
   } catch (error: any) {
     console.error('Error creating customer:', error)
+    console.error('Error details:', {
+      message: error.message,
+      name: error.name,
+      stack: error.stack,
+      errors: error.errors,
+    })
     return NextResponse.json(
-      { message: error.message || 'Internal server error' },
+      {
+        message: error.message || 'Internal server error',
+        details: error.errors || {},
+      },
       { status: 500 }
     )
   }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import Task from '@/models/Task'
+import mongoose from 'mongoose'
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
 
     const query: any = {
-      organization_id: '000000000000000000000001',
+      organization_id: new mongoose.Types.ObjectId('000000000000000000000001'),
     }
 
     if (status) query.status = status
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
 
     const task = await Task.create({
-      organization_id: '000000000000000000000001',
+      organization_id: new mongoose.Types.ObjectId('000000000000000000000001'),
       ...body,
       created_at: new Date(),
       updated_at: new Date(),

@@ -6,17 +6,64 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Search, Filter, Mail, Phone, TrendingUp, Building2, ExternalLink } from "lucide-react"
+import { Plus, Search, Filter, Mail, Phone, TrendingUp, Building2, MoreHorizontal } from "lucide-react"
 import { useFetch } from "@/lib/hooks"
+import { CustomerForm } from "@/components/customer-form"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export default function CustomersPage() {
   const [skip, setSkip] = useState(0)
+  const [formOpen, setFormOpen] = useState(false)
+  const [editingCustomer, setEditingCustomer] = useState<any>(null)
 
   // Fetch customers from API
-  const { data: response, loading } = useFetch<any>(`/customers?skip=${skip}&limit=20`)
+  const queryString = `/customers?skip=${skip}&limit=20`
+  const { data: response, loading, setData } = useFetch<any>(queryString)
 
   const customers = response?.data || []
   const total = response?.total || 0
+
+  const handleDelete = async (customerId: string) => {
+    if (!confirm('Are you sure you want to delete this customer?')) return
+
+    try {
+      const response = await fetch(`/api/customers/${customerId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete customer')
+      }
+
+      // Refresh the list
+      window.location.reload()
+    } catch (error) {
+      alert('Failed to delete customer')
+    }
+  }
+
+  const handleEdit = (customer: any) => {
+    setEditingCustomer(customer)
+    setFormOpen(true)
+  }
+
+  const handleFormSuccess = () => {
+    window.location.reload()
+  }
+
+  const handleFormClose = (open: boolean) => {
+    setFormOpen(open)
+    if (!open) {
+      setEditingCustomer(null)
+    }
+  }
 
   if (loading) {
     return (
@@ -43,7 +90,7 @@ export default function CustomersPage() {
             Manage your client relationships and growth
           </p>
         </div>
-        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/20">
+        <Button onClick={() => setFormOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/20">
           <Plus size={20} className="mr-2" />
           New Customer
         </Button>
@@ -66,16 +113,37 @@ export default function CustomersPage() {
       {/* Customer Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {customers.map((customer: any) => (
-          <Card key={customer._id} className="group hover:-translate-y-1 transition-all duration-300 border-none shadow-md hover:shadow-xl ring-1 ring-slate-200 dark:ring-slate-800 bg-white dark:bg-slate-900 text-left overflow-hidden">
+          <Card key={customer._id} className="group hover:-translate-y-1 transition-all duration-300 border-none shadow-md hover:shadow-xl ring-1 ring-slate-200 dark:ring-slate-800 bg-white dark:bg-slate-900 text-left overflow-hidden relative">
             <div className="h-2 w-full bg-gradient-to-r from-indigo-500 to-purple-500" />
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl font-bold text-slate-700 dark:text-slate-300">
                   {customer.first_name[0]}{customer.last_name[0]}
                 </div>
-                <Badge variant="outline" className={`${getHealthColor(customer.health_score)} border font-medium`}>
-                  {customer.health_score} Health
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className={`${getHealthColor(customer.health_score)} border font-medium`}>
+                    {customer.health_score} Health
+                  </Badge>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuItem onClick={() => handleEdit(customer)}>Edit Customer</DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-red-600 dark:text-red-400"
+                        onClick={() => handleDelete(customer._id)}
+                      >
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
 
               <div className="mb-4">
@@ -131,6 +199,13 @@ export default function CustomersPage() {
           </Button>
         </div>
       </div>
+
+      <CustomerForm
+        open={formOpen}
+        onOpenChange={handleFormClose}
+        customer={editingCustomer}
+        onSuccess={handleFormSuccess}
+      />
     </div>
   )
 }

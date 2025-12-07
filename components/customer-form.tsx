@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,10 +12,11 @@ import { Textarea } from "@/components/ui/textarea"
 interface CustomerFormProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit?: (data: any) => void
+  customer?: any
+  onSuccess?: () => void
 }
 
-export function CustomerForm({ open, onOpenChange, onSubmit }: CustomerFormProps) {
+export function CustomerForm({ open, onOpenChange, customer, onSuccess }: CustomerFormProps) {
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -23,26 +24,81 @@ export function CustomerForm({ open, onOpenChange, onSubmit }: CustomerFormProps
     phone: "",
     company_name: "",
     industry: "",
-    website: "",
-    description: "",
+    tags: [] as string[],
   })
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (customer) {
+      setFormData({
+        first_name: customer.first_name || "",
+        last_name: customer.last_name || "",
+        email: customer.email || "",
+        phone: customer.phone || "",
+        company_name: customer.company_name || "",
+        industry: customer.industry || "",
+        tags: customer.tags || [],
+      })
+    } else {
+      setFormData({
+        first_name: "",
+        last_name: "",
+        email: "",
+        phone: "",
+        company_name: "",
+        industry: "",
+        tags: [],
+      })
+    }
+  }, [customer, open])
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit?.(formData)
-    onOpenChange(false)
+    setLoading(true)
+
+    try {
+      const url = customer ? `/api/customers/${customer._id}` : '/api/customers'
+      const method = customer ? 'PATCH' : 'POST'
+
+      console.log('Submitting customer data:', formData)
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+
+      const data = await response.json()
+      console.log('Server response:', data)
+
+      if (!response.ok) {
+        throw new Error(data.message || `Failed to ${customer ? 'update' : 'create'} customer`)
+      }
+
+      onSuccess?.()
+      onOpenChange(false)
+    } catch (error: any) {
+      console.error('Error submitting customer:', error)
+      alert(`Failed to ${customer ? 'update' : 'create'} customer: ${error.message}`)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create New Customer</DialogTitle>
-          <DialogDescription>Add a new customer to your database</DialogDescription>
+          <DialogTitle>{customer ? 'Edit Customer' : 'Create New Customer'}</DialogTitle>
+          <DialogDescription>
+            {customer ? 'Update customer information' : 'Add a new customer to your database'}
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -109,29 +165,9 @@ export function CustomerForm({ open, onOpenChange, onSubmit }: CustomerFormProps
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="website">Website</Label>
-            <Input
-              id="website"
-              placeholder="https://company.com"
-              value={formData.website}
-              onChange={(e) => handleChange("website", e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              placeholder="Additional notes about the customer..."
-              value={formData.description}
-              onChange={(e) => handleChange("description", e.target.value)}
-            />
-          </div>
-
           <div className="flex gap-2 pt-4">
-            <Button type="submit" className="flex-1">
-              Create Customer
+            <Button type="submit" className="flex-1" disabled={loading}>
+              {loading ? 'Saving...' : customer ? 'Update Customer' : 'Create Customer'}
             </Button>
             <Button
               type="button"

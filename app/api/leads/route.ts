@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import Lead from '@/models/Lead'
+import mongoose from 'mongoose'
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,16 +11,14 @@ export async function GET(request: NextRequest) {
     const skip = parseInt(searchParams.get('skip') || '0')
     const limit = parseInt(searchParams.get('limit') || '20')
     const status = searchParams.get('status')
-    const source = searchParams.get('source')
 
     // Build query
-    const query: any = {}
-    if (status) query.status = status
-    if (source) query.source = source
-
-    // For now, use a demo organization ID
-    // In production, this would come from the authenticated user's session
-    query.organization_id = '000000000000000000000001'
+    const query: any = {
+      organization_id: new mongoose.Types.ObjectId('000000000000000000000001'),
+    }
+    if (status) {
+      query.status = status
+    }
 
     const [leads, total] = await Promise.all([
       Lead.find(query)
@@ -52,7 +51,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
 
     const lead = await Lead.create({
-      organization_id: '000000000000000000000001',
+      organization_id: new mongoose.Types.ObjectId('000000000000000000000001'),
       ...body,
       created_at: new Date(),
       updated_at: new Date(),
